@@ -14,11 +14,11 @@ session_start();
 
 class config {
 
-	const DB="db";
-	const COOKIE="cookies";
-	const SESSION="session";
-	const TMP="tmp";
-	protected static $data=array(self::DB=>array(),
+	const DB="db";										//just defining the name
+	const COOKIE="cookies";								//just defining the name
+	const SESSION="session";							//just defining the name
+	const TMP="tmp";									//just defining the name
+	protected static $data=array(self::DB=>array(),		//stores all conifgurations
 								 self::COOKIE=>array(),
 								 self::SESSION=>array(),
 								 self::TMP=>array());
