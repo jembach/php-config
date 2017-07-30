@@ -1,96 +1,110 @@
 <?php
-/**************************************************************************************************\
-# Datei: config.class.php                                                                          #
-#   - Konfigurationsklasse, in der alle globalen, sowie lokalen Konfigurationen abgefragt		   #
-#     werden																					   #
-	- lokale Konfigurationen werden bevorzugt													   #
-#                                                                                                  #
-# Entwicklung:                                                                                     #
-#   - 2015-03-27, jembach (Jonas Emnbach): Erstellen der Datei                                     #
-#   - 2016-06-25, jembach (Jonas Emnbach): Implementierung der globalClass in diese Datei->tmp     #
-#																								   #
-# TODO: set function implementation																   #
-\**************************************************************************************************/
 	
+session_start();
+/**
+ * Class for organisation of global configuration data
+ * @category  global data
+ * @package   php-config
+ * @author    Jonas Embach
+ * @copyright Copyright (c) 2017
+ * @license   http://opensource.org/licenses/gpl-3.0.html GNU Public License
+ * @link      https://github.com/jembach/php-menu
+ * @version   1.0-master
+ */
+
 class config {
-	protected static $db;
-	protected static $tmp;
+
+	const DB="db";
+	const COOKIE="cookies";
+	const SESSION="session";
+	const TMP="tmp";
+	protected static $data=array(self::DB=>array(),
+								 self::COOKIE=>array(),
+								 self::SESSION=>array(),
+								 self::TMP=>array());
 	
-	
-    /************************************************************************************************\
-    # Funktion:                                                                                      #
-    #   - prüft, ob die Datenbankverbindung aktiv ist                                                #
-    #																								 #
-    \************************************************************************************************/
-	
+	/**
+	 * initialize the class to access functions static
+	 * also it creates the database table
+	 */
 	public static function checkObject() {
 		if (self::$db===null) {
-			self::$db=new db();
+			if(constant(DB_USER) && constant(DB_PASSWORD) && constant(DB_HOST) && constant(DB_DATABASE))
+				self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
+			else {
+				throw new Exception("To use this extension you have to set the databse connection information!", 1);
+				return;
+			}
+
 			if(self::$db->tableExists('config')==false){
-				$db->startTransaction();
-				self::$db->rawSQL("CREATE TABLE `config` (
-  									`key` varchar(50) NOT NULL,
-									 `option` varchar(75) NOT NULL DEFAULT '',
-									 `value` text NOT NULL
+				self::$db->startTransaction();
+				self::$db->rawSQL("CREATE TABLE `config` (`key` varchar(50) NOT NULL,`value` text NOT NULL
 									) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
 				self::$db->rawSQL("ALTER TABLE `config`
 									ADD UNIQUE KEY `key` (`key`);");
-				$db->commit();
+				self::$db->commit();
+			}
+			//set database configurations
+			foreach (self::$db->Select("config") as $value) {
+				self::$data[self::DB][$value['key']]=$value['value'];
+			}
+			//set cookie configurations
+			foreach ($_COOKIES as $key => $value) {
+				self::$data[self::COOKIE][$key]=$value;
+			}
+			//set session configurations
+			foreach ($_SESSION as $key => $value) {
+				self::$data[self::SESSION][$key]=$value;
 			}
 		}
 	}
 	
-	
-    /************************************************************************************************\
-    # Funktion:                                                                                      #
-    #   - gibt eine Konfiguration zurück			                                                 #
-    #																								 #
-    \************************************************************************************************/
-	
-	public static function get($key){
-		try {
-			$result=null;
-			$result=self::$db->Select('config',new dbCond('key',$key));
-			#Konfiguration auswerten
-			if($result!=false){
-				if(@unserialize($result[0]['value'])!==false)
-					return unserialize($result[0]['value']);
+	/**
+	 * set the configuration data
+	 *
+	 * @param      <type>  $key    The key
+	 * @param      <type>  $value  The value
+	 * @param      string  $type   The type
+	 */
+	public function set($key,$value,$type="tmp"){
+		switch ($type) {
+			case 'db':
+				if(isset(self::$data[self::DB][$key]))
+					self::$db->Update("config",array("value"=>$value),new dbCond("key",$key));
 				else
-					return $result[0]['value'];
-			}
-			else
-				return NULL;	
-		} catch (Exception $e) {
-			return NULL;
+					self::$db->Insert("config",array("key"=>$key,"value"=>$value));
+				self::$data[self::DB][$key]=$value;
+			  break;
+			case 'cookies':
+				setcookie($key,$value,time()+365*24*3600);
+				self::$data[self::COOKIE][$key]=$value;
+			  break;
+			case 'session':
+				$_SESSION[$key]=$value;
+				self::$data[self::SESSION][$key]=$value;
+			  break;
+			case 'tmp':
+				self::$data[self::TMP][$key]=$value;
+			  break;
 		}
 	}
-	
-	
-    /************************************************************************************************\
-    # Funktion:                                                                                      #
-    #   - passt eine Konfiguration an				                                                 #
-    #																								 #
-    \************************************************************************************************/
-	
-	public function set($key,$value,$option){
-		
+
+	/**
+	 * returns a configuration
+	 * @param      string   $key    The configuration key
+	 * @return     string  			The configuration
+	 */
+	public static function get($key,$type=false){
+		if($type!==false){
+			return self::$data[$type];
+		} else{
+			foreach (array(self::$data) as $value) {
+				if(isset($value['key']))
+					return $value['key'];
+			}
+		}
 	}
-	
-    /************************************************************************************************\
-    # Funktion:                                                                                      #
-    #   - gibt eine Konfiguration zurück, die nur Sessionspezifisch ist                              #
-	#	- sie muss jedesmal beim neuladen neu gesetzt werden										 #
-	#	- wenn kein Wert gesetzt wird, wird der Inhalt zurückgegeben								 #
-    #																								 #
-    \************************************************************************************************/
-	
-	public static function tmp($key,$value=null){
-	    if($value==null && isset(self::$tmp[$key]))
-	    	return self::$tmp[$key]; 
-		else if($value!=null)
-			self::$tmp[$key]=$value;
-					
-	}
+
 	
 	
 }
