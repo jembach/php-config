@@ -1,0 +1,30 @@
+{
+	"name": "jembach/php-config",
+	"description": "PHP class that handles configurations",
+  "type": "library",
+  "keywords": [
+    "menu",
+    "php"
+  ],
+  "license": "GPL-3.0",
+  "version": "1.0",
+  "authors": [
+        {
+            "name": "Jonas Embach",
+            "role": "Developer"
+        }
+    ],
+  "support": {
+    "docs": "https://github.com/jembach/php-config/readme.md" 
+  },
+  "repositories": [
+        { "type": "vcs", "url": "https://github.com/jembach/php-database" }
+  ],
+	"require": {
+		"php": ">=5.3.0",
+    "jembach/php-database": "*"
+	},
+	"autoload": {
+		"files": ["config.class.php"]
+	}
+}
