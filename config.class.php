@@ -46,11 +46,14 @@ class config {
 				self::$db->commitTransaction();
 			}
 			//set database configurations
-			foreach (self::$db->Select("config") as $value) {
-				self::$data[self::DB][$value['key']]=$value['value'];
+			$data=self::$db->Select("config");
+			if(is_array($data)){
+				foreach (self::$db->Select("config") as $value) {
+					self::$data[self::DB][$value['key']]=$value['value'];
+				}
 			}
 			//set cookie configurations
-			foreach ($_COOKIES as $key => $value) {
+			foreach ($_COOKIE as $key => $value) {
 				self::$data[self::COOKIE][$key]=$value;
 			}
 			//set session configurations
