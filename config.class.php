@@ -72,22 +72,22 @@ class config {
 	 */
 	public function set($key,$value,$type="tmp"){
 		switch ($type) {
-			case 'db':
+			case self::DB:
 				if(isset(self::$data[self::DB][$key]))
 					self::$db->Update("config",array("value"=>$value),new dbCond("key",$key));
 				else
 					self::$db->Insert("config",array("key"=>$key,"value"=>$value));
 				self::$data[self::DB][$key]=$value;
 			  break;
-			case 'cookies':
+			case self::COOKIE:
 				setcookie($key,$value,time()+365*24*3600);
 				self::$data[self::COOKIE][$key]=$value;
 			  break;
-			case 'session':
+			case self::SESSION:
 				$_SESSION[$key]=$value;
 				self::$data[self::SESSION][$key]=$value;
 			  break;
-			case 'tmp':
+			case self::TMP:
 				self::$data[self::TMP][$key]=$value;
 			  break;
 		}
@@ -99,15 +99,15 @@ class config {
 	 * @return     string  			The configuration
 	 */
 	public static function get($key,$type=false){
-		if($type!==false){
-			if(isset(self::$data[$type]))
-				return self::$data[$type];
+		if($type!=false){
+			if(isset(self::$data[$type][$key]))
+				return self::$data[$type][$key];
 			else 
 				return false;
-		} else{
-			foreach (array(self::$data) as $value) {
-				if(isset($value['key']))
-					return $value['key'];
+		} else {
+			foreach (self::$data as $value) {
+				if(isset($value[$key]))
+					return $value[$key];
 			}
 		}
 		return false;
