@@ -66,9 +66,9 @@ class config {
 	/**
 	 * set the configuration data
 	 *
-	 * @param      <type>  $key    The key
-	 * @param      <type>  $value  The value
-	 * @param      string  $type   The type
+	 * @param      <type>  $key    The configuration key
+	 * @param      <type>  $value  The configuration value
+	 * @param      string  $type   The configuration type
 	 */
 	public function set($key,$value,$type="tmp"){
 		switch ($type) {
@@ -96,7 +96,7 @@ class config {
 	/**
 	 * returns a configuration
 	 * @param      string   $key    The configuration key
-	 * @return     string  			The configuration
+	 * @return     string  			The configuration type
 	 */
 	public static function get($key,$type=false){
 		if($type!=false){
@@ -111,6 +111,32 @@ class config {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * unsets a configuration
+	 * @param      string   $key    The configuration key
+	 * @return     string  			The configuration type
+	 */
+	public static function unset($key,$type="tmp"){
+		switch ($type) {
+			case self::DB:
+				if(isset(self::$data[self::DB][$key]))
+					self::$db->Update("config",new dbCond("key",$key));
+				unset(self::$data[self::DB][$key]);
+			  break;
+			case self::COOKIE:
+				setcookie($key,"",time()-3600);
+				unset(self::$data[self::COOKIE][$key]);
+			  break;
+			case self::SESSION:
+				unset($_SESSION[$key]);
+				unset(self::$data[self::SESSION][$key]);
+			  break;
+			case self::TMP:
+				unset(self::$data[self::TMP][$key]);
+			  break;
+		}
 	}
 	
 }
