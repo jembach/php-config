@@ -43,7 +43,7 @@ class config {
 									) ENGINE=InnoDB DEFAULT CHARSET=latin1;");
 				self::$db->rawSQL("ALTER TABLE `config`
 									ADD UNIQUE KEY `key` (`key`);");
-				self::$db->commit();
+				self::$db->commitTransaction();
 			}
 			//set database configurations
 			foreach (self::$db->Select("config") as $value) {
