@@ -30,7 +30,7 @@ class config {
 	 */
 	public static function checkObject() {
 		if (self::$db===null) {
-			if(defined(DB_USER) && defined(DB_PASSWORD) && defined(DB_HOST) && defined(DB_DATABASE))
+			if(defined("DB_USER") && defined("DB_PASSWORD") && defined("DB_HOST") && defined("DB_DATABASE"))
 				self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
 			else {
 				throw new Exception("To use this extension you have to set the databse connection information!", 1);
