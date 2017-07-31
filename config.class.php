@@ -18,6 +18,7 @@ class config {
 	const COOKIE="cookies";								//just defining the name
 	const SESSION="session";							//just defining the name
 	const TMP="tmp";									//just defining the name
+	protected static $db;
 	protected static $data=array(self::DB=>array(),		//stores all conifgurations
 								 self::COOKIE=>array(),
 								 self::SESSION=>array(),
