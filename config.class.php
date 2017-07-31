@@ -100,13 +100,17 @@ class config {
 	 */
 	public static function get($key,$type=false){
 		if($type!==false){
-			return self::$data[$type];
+			if(isset(self::$data[$type]))
+				return self::$data[$type];
+			else 
+				return false;
 		} else{
 			foreach (array(self::$data) as $value) {
 				if(isset($value['key']))
 					return $value['key'];
 			}
 		}
+		return false;
 	}
 	
 }
