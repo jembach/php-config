@@ -1,6 +1,8 @@
 <?php
 	
-session_start();
+if (session_status() == PHP_SESSION_NONE) {
+    session_start();
+}
 /**
  * Class for organisation of global configuration data
  * @category  global data
@@ -30,13 +32,18 @@ class config {
 	 */
 	public static function checkObject() {
 		if (self::$db===null) {
-			if(defined("DB_USER") && defined("DB_PASSWORD") && defined("DB_HOST") && defined("DB_DATABASE"))
-				self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);
-			else {
+			if(defined("DB_USER") && defined("DB_PASSWORD") && defined("DB_HOST") && defined("DB_DATABASE")){
+				try {
+					self::$db=new db(DB_HOST,DB_USER,DB_PASSWORD,DB_DATABASE);	
+				} catch (Exception $e) {
+					trigger_error("While accessing the database an error occured: ".$e->getMessage(),E_USER_WARNING);
+				}
+			} else {
 				throw new Exception("To use this extension you have to set the databse connection information!", 1);
 				return;
 			}
-
+		}
+		try {
 			if(self::$db->tableExists('config')==false){
 				self::$db->startTransaction();
 				self::$db->rawSQL("CREATE TABLE `config` (`key` varchar(50) NOT NULL,`value` text NOT NULL
@@ -47,19 +54,21 @@ class config {
 			}
 			//set database configurations
 			$data=self::$db->Select("config");
-			if(is_array($data)){
-				foreach (self::$db->Select("config") as $value) {
-					self::$data[self::DB][$value['key']]=$value['value'];
-				}
+		} catch (Exception $e){
+			trigger_error("While loading the database configurations an error occured: ".$e->getMessage(),E_USER_WARNING);
+		}
+		if(is_array($data)){
+			foreach ($data as $value) {
+				self::$data[self::DB][$value['key']]=$value['value'];
 			}
-			//set cookie configurations
-			foreach ($_COOKIE as $key => $value) {
-				self::$data[self::COOKIE][$key]=$value;
-			}
-			//set session configurations
-			foreach ($_SESSION as $key => $value) {
-				self::$data[self::SESSION][$key]=$value;
-			}
+		}
+		//set cookie configurations
+		foreach ($_COOKIE as $key => $value) {
+			self::$data[self::COOKIE][$key]=$value;
+		}
+		//set session configurations
+		foreach ($_SESSION as $key => $value) {
+			self::$data[self::SESSION][$key]=$value;
 		}
 	}
 	
@@ -70,14 +79,18 @@ class config {
 	 * @param      <type>  $value  The configuration value
 	 * @param      string  $type   The configuration type
 	 */
-	public function set($key,$value,$type="tmp"){
+	public static function set($key,$value,$type="tmp"){
 		switch ($type) {
 			case self::DB:
-				if(isset(self::$data[self::DB][$key]))
-					self::$db->Update("config",array("value"=>$value),new dbCond("key",$key));
-				else
-					self::$db->Insert("config",array("key"=>$key,"value"=>$value));
-				self::$data[self::DB][$key]=$value;
+				try {
+					if(isset(self::$data[self::DB][$key]))
+						self::$db->Update("config",array("value"=>$value),new dbCond("key",$key));
+					else
+						self::$db->Insert("config",array("key"=>$key,"value"=>$value));
+					self::$data[self::DB][$key]=$value;
+				} catch (Exception $e){
+					trigger_error("Configuration couldn't set: ".$e->getMessage(),E_USER_WARNING);
+				}
 			  break;
 			case self::COOKIE:
 				setcookie($key,$value,time()+365*24*3600);
@@ -103,14 +116,14 @@ class config {
 			if(isset(self::$data[$type][$key]))
 				return self::$data[$type][$key];
 			else 
-				return false;
+				return NULL;
 		} else {
 			foreach (self::$data as $value) {
 				if(isset($value[$key]))
 					return $value[$key];
 			}
 		}
-		return false;
+		return NULL;
 	}
 
 	/**
@@ -118,12 +131,16 @@ class config {
 	 * @param      string   $key    The configuration key
 	 * @return     string  			The configuration type
 	 */
-	public static function unset($key,$type="tmp"){
+	public static function delete($key,$type="tmp"){
 		switch ($type) {
 			case self::DB:
-				if(isset(self::$data[self::DB][$key]))
-					self::$db->Update("config",new dbCond("key",$key));
-				unset(self::$data[self::DB][$key]);
+				try {
+					if(isset(self::$data[self::DB][$key]))
+					self::$db->Delete("config",new dbCond("key",$key));
+					unset(self::$data[self::DB][$key]);	
+				} catch (Exception $e) {
+					trigger_error("While deleting a configuration an error occured: ".$e->getMessage(),E_USER_WARNING);
+				}
 			  break;
 			case self::COOKIE:
 				setcookie($key,"",time()-3600);
